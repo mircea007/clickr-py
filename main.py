@@ -1,8 +1,10 @@
 import time
 import threading
-import subprocess # to call the command line in Linux
 import random     # to throw off bot detection
-#import mouse     # https://www.thepythoncode.com/article/control-mouse-python
+import pynput.mouse as mouselib
+import pynput.keyboard as kblib
+
+mouse = mouselib.Controller()
 
 # autoclicker class
 class AutoClicker:
@@ -16,8 +18,9 @@ class AutoClicker:
       self.state_mutex.release()
       
       if statecpy:
-        subprocess.Popen( self.cmd ) # dispatch click
-      
+        mouse.press( mouselib.Button.left )
+        mouse.release( mouselib.Button.left )      
+
       self.cps_mutex.acquire()
       delay = random.uniform( self.min_delay, self.max_delay )
       self.cps_mutex.release()
@@ -68,11 +71,15 @@ class AutoClicker:
 
   # state control
   def start( self ):
+    print( "start called" )
+
     self.state_mutex.acquire()
     self.state = 2
     self.state_mutex.release()
   
   def stop( self ):
+    print( "stop called" )
+
     self.state_mutex.acquire()
     self.state = 1
     self.state_mutex.release()
@@ -84,15 +91,62 @@ class AutoClicker:
 
     self.thread.join()
 
+auto = AutoClicker( 0, cps = 10.0, delta = 0 )
 
+mouses = 0 # number of mouses pressed at one time
+caps_lock = False
+caps_ignore = False
+state_mutex = threading.Lock()
 
-'''
-auto = AutoClicker( 0, cps = 10.0 )
+prev_mouse_state = False
 
-# do a 5 second click spree
-auto.start()
-time.sleep( 5.0 )
-auto.stop()
+# when calling this function make sure state_mutex is locked
+def recalc_state():
+  global mouses
+  global caps_lock
+  global prev_mouse_state
+  global auto
 
-auto.end()
-'''
+  print( "mouses = " + str( mouses ) + " | caps_lock = " + str( caps_lock ) )
+
+  mouse_state = (mouses > 0) and caps_lock
+
+  if mouse_state != prev_mouse_state:
+    if mouse_state:
+      auto.start()
+    else:
+      auto.stop()
+  
+  prev_mouse_state = mouse_state
+
+def on_click( x, y, button, pressed ):
+  global state_mutex
+  global mouses
+
+  state_mutex.acquire()
+
+  mouses += (1 if pressed else -1)
+  recalc_state()
+
+  state_mutex.release()
+
+def on_press( key ):
+  if key == kblib.Key.caps_lock:
+    global state_mutex
+    global caps_lock
+    global caps_ignore
+
+    state_mutex.acquire()
+
+    caps_ignore = not caps_ignore
+    if caps_ignore:
+      caps_lock = not caps_lock
+      recalc_state()
+
+    state_mutex.release()
+
+kb_listener = kblib.Listener( on_press = on_press )
+kb_listener.start()
+
+with mouselib.Listener( on_click = on_click ) as mouse_listener:
+  mouse_listener.join()
