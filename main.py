@@ -1,12 +1,13 @@
 import time
 import threading
-import subprocess
-import random
-#import xdo
+import subprocess # to call the command line in Linux
+import random     # to throw off bot detection
+#import mouse     # https://www.thepythoncode.com/article/control-mouse-python
 
+# autoclicker class
 class AutoClicker:
   @staticmethod
-  def thread_proc( self ):# make this work
+  def thread_proc( self ):
     statecpy = 0
 
     self.state_mutex.acquire()
@@ -15,7 +16,7 @@ class AutoClicker:
       self.state_mutex.release()
       
       if statecpy:
-        subprocess.Popen( self.cmd ) # click
+        subprocess.Popen( self.cmd ) # dispatch click
       
       self.cps_mutex.acquire()
       delay = random.uniform( self.min_delay, self.max_delay )
@@ -39,6 +40,7 @@ class AutoClicker:
     self.delta = delta
     self.cps = cps
 
+    # start worker thread
     self.thread.start()
     
   # cps control
@@ -82,6 +84,9 @@ class AutoClicker:
 
     self.thread.join()
 
+
+
+'''
 auto = AutoClicker( 0, cps = 10.0 )
 
 # do a 5 second click spree
@@ -90,3 +95,4 @@ time.sleep( 5.0 )
 auto.stop()
 
 auto.end()
+'''
