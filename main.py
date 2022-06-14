@@ -10,12 +10,6 @@ from autoclicker import AutoClicker # autoclicker class
 
 IS_WINDOWS = (sys.platform == 'win32')
 
-if IS_WINDOWS:
-  mouse = mouselib.Controller()
-else:
-  import xdo as xdolib
-  xdo = xdolib.Xdo()
-
 LOF_PREFIX_INFO = "(\033[92m*\033[0m) "
 
 def usage():
@@ -44,7 +38,8 @@ for opt, arg in opts:
   elif opt == '--delta':
     delta = float( arg )
 
-print( LOF_PREFIX_INFO + "Running " + [ "Linux", "Windows" ][IS_WINDOWS] + " version" )
+print( LOF_PREFIX_INFO + "Running " + ("Windows" if IS_WINDOWS else "Linux") + " version" )
+print( LOF_PREFIX_INFO + f"Parameters: cps = {cps}, delta = {delta}" )
 print( LOF_PREFIX_INFO + "To end atuoclicker press the END key" )
 print( LOF_PREFIX_INFO + "To start autoclicking turn on Caps Lock and hold the left or right mouse button" )
 
