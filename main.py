@@ -3,7 +3,7 @@ import threading
 import random                   # to throw off bot detection
 import pynput.mouse as mouselib # mouse library
 import pynput.keyboard as kblib # keyboard library
-import sys
+import sys, getopt
 
 IS_WINDOWS = (sys.platform == 'win32')
 
@@ -14,10 +14,6 @@ else:
   xdo = xdolib.Xdo()
 
 LOF_PREFIX_INFO = "(\u001b[32m*\u001b[0m) "
-
-print( LOF_PREFIX_INFO + "Running " + [ "Linux", "Windows" ][IS_WINDOWS] + " version" )
-print( LOF_PREFIX_INFO + "To end atuoclicker press the END key" )
-print( LOF_PREFIX_INFO + "To start autoclicking turn on Caps Lock and hold the left or right mouse button" )
 
 # autoclicker class
 class AutoClicker:
@@ -112,9 +108,36 @@ class AutoClicker:
 
     self.thread.join()
 
-auto_left = AutoClicker( 1 )   # left
-#auto_middle = AutoClicker( 2 ) # middle
-auto_right = AutoClicker( 3 )  # right
+def usage():
+  print( f"usage: {sys.argv[0]} [-h] [--cps CPS] [--delta DELTA]" )
+  print( "  -h     prints this page" )
+  print( "  CPS    clickrate, a positive number (not only integers)" )
+  print( "  DELTA  maximum delay deviation, a number between 0 and 1" )
+  sys.exit( 1 )
+
+try:
+  opts, args = getopt.getopt( sys.argv[1:], "h", [ "cps=", "delta=" ] )
+except getopt.GetoptError:
+  usage()
+
+cps = 10.0
+delta = 0.3
+
+for opt, arg in opts:
+  if opt == '-h':
+    usage()
+  elif opt == '--cps':
+    cps = float( arg )
+  elif opt == '--delta':
+    delta = float( arg )
+
+print( LOF_PREFIX_INFO + "Running " + [ "Linux", "Windows" ][IS_WINDOWS] + " version" )
+print( LOF_PREFIX_INFO + "To end atuoclicker press the END key" )
+print( LOF_PREFIX_INFO + "To start autoclicking turn on Caps Lock and hold the left or right mouse button" )
+
+auto_left = AutoClicker( 1, cps, delta )   # left
+#auto_middle = AutoClicker( 2, cps, delta ) # middle
+auto_right = AutoClicker( 3, cps, delta )  # right
 
 def ragequit():
   global auto_left
