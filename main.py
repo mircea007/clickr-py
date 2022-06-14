@@ -5,7 +5,17 @@ import pynput.mouse as mouselib # mouse library
 import pynput.keyboard as kblib # keyboard library
 import sys
 
-mouse = mouselib.Controller()
+IS_WINDOWS = (sys.platform == 'win32')
+
+if IS_WINDOWS:
+  mouse = mouselib.Controller()
+else:
+  import xdo as xdolib
+  xdo = xdolib.Xdo()
+
+LOF_PREFIX_INFO = "(\u001b[32m*\u001b[0m) "
+
+print( LOF_PREFIX_INFO + "Running " + [ "Linux", "Windows" ][IS_WINDOWS] + " version" )
 
 # autoclicker class
 class AutoClicker:
@@ -19,8 +29,11 @@ class AutoClicker:
       self.state_mutex.release()
       
       if statecpy:
-        mouse.press( self.button )
-        mouse.release( self.button )      
+        if IS_WINDOWS:
+          mouse.press( self.button )
+          mouse.release( self.button )
+        else:
+          xdo.click_window( xdo.get_window_at_mouse(), self.button )
 
       self.cps_mutex.acquire()
       delay = random.uniform( self.min_delay, self.max_delay )
@@ -28,14 +41,21 @@ class AutoClicker:
 
       time.sleep( delay )
       self.state_mutex.acquire()
-    
+
     self.state_mutex.release()
 
   def __init__( self, button, cps = 10.0, delta = 0.3 ):
     # autoclicker state
     self.state_mutex = threading.Lock()
     self.state = 1 # 0 - exit, 1 - not running, 2 - running
-    self.button = button
+    if IS_WINDOWS:
+      self.button = {
+        1: mouselib.Button.left,
+        2: mouselib.Button.middle,
+        3: mouselib.Button.right
+      }[button]
+    else:
+      self.button = button
     
     # clicking speed
     self.cps_mutex = threading.Lock()
@@ -90,9 +110,9 @@ class AutoClicker:
 
     self.thread.join()
 
-auto_left = AutoClicker( mouselib.Button.left )
-auto_right = AutoClicker( mouselib.Button.right )
-# not doing middle click (because why???)
+auto_left = AutoClicker( 1 )   # left
+#auto_middle = AutoClicker( 2 ) # middle
+auto_right = AutoClicker( 3 )  # right
 
 def ragequit():
   global auto_left
@@ -173,15 +193,11 @@ def on_press( key ):
     state_mutex.acquire()
 
     caps_ignore = not caps_ignore
-    if caps_ignore:
+    if caps_ignore or not IS_WINDOWS:
       caps_lock = not caps_lock
       recalc_state()
 
     state_mutex.release()
-
-def test_handle( sig, frame ):
-  print( "yo!!!" )
-  exit( 1 )
 
 kb_listener = kblib.Listener( on_press = on_press )
 kb_listener.start()
