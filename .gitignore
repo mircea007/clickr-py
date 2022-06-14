@@ -1,0 +1,4 @@
+# pyinstaller stuff
+build
+dist
+main.spec

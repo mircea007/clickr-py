@@ -16,6 +16,8 @@ else:
 LOF_PREFIX_INFO = "(\u001b[32m*\u001b[0m) "
 
 print( LOF_PREFIX_INFO + "Running " + [ "Linux", "Windows" ][IS_WINDOWS] + " version" )
+print( LOF_PREFIX_INFO + "To end atuoclicker press the END key" )
+print( LOF_PREFIX_INFO + "To start autoclicking turn on Caps Lock and hold the left or right mouse button" )
 
 # autoclicker class
 class AutoClicker:
