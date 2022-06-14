@@ -19,6 +19,12 @@ You need to install pynput:
 pip install pynput
 ```
 
+For the Linux version you also need to install xdo:
+
+```bash
+pip install python-libxdo
+```
+
 ### Running
 
 ```
