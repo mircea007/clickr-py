@@ -1,9 +1,12 @@
-import time
-import threading
-import random                   # to throw off bot detection
+# clickr-py
+# A cross-platform autoclicker script for cheating in video games
+
+# -- imports --
+import threading # for mutexes
 import pynput.mouse as mouselib # mouse library
 import pynput.keyboard as kblib # keyboard library
-import sys, getopt
+import sys, getopt # command line arguments
+from autoclicker import AutoClicker # autoclicker class
 
 IS_WINDOWS = (sys.platform == 'win32')
 
@@ -13,106 +16,16 @@ else:
   import xdo as xdolib
   xdo = xdolib.Xdo()
 
-LOF_PREFIX_INFO = "(\u001b[32m*\u001b[0m) "
-
-# autoclicker class
-class AutoClicker:
-  @staticmethod
-  def thread_proc( self ):
-    statecpy = 0
-
-    self.state_mutex.acquire()
-    while self.state:
-      statecpy = self.state - 1 # keep copy to release mutex
-      self.state_mutex.release()
-      
-      if statecpy:
-        if IS_WINDOWS:
-          mouse.press( self.button )
-          mouse.release( self.button )
-        else:
-          xdo.click_window( xdo.get_window_at_mouse(), self.button )
-
-      self.cps_mutex.acquire()
-      delay = random.uniform( self.min_delay, self.max_delay )
-      self.cps_mutex.release()
-
-      time.sleep( delay )
-      self.state_mutex.acquire()
-
-    self.state_mutex.release()
-
-  def __init__( self, button, cps = 10.0, delta = 0.3 ):
-    # autoclicker state
-    self.state_mutex = threading.Lock()
-    self.state = 1 # 0 - exit, 1 - not running, 2 - running
-    if IS_WINDOWS:
-      self.button = {
-        1: mouselib.Button.left,
-        2: mouselib.Button.middle,
-        3: mouselib.Button.right
-      }[button]
-    else:
-      self.button = button
-    
-    # clicking speed
-    self.cps_mutex = threading.Lock()
-    self.delta = delta
-    self.cps = cps
-
-    # start worker thread
-    self.thread = threading.Thread(
-      target = AutoClicker.thread_proc,
-      args = (self,)
-    )
-    self.thread.start()
-    
-  # cps control
-  def get_cps( self ):
-    self.cps_mutex.acquire()
-    retval = self._cps
-    self.cps_mutex.release()
-    
-    return retval
-
-  def set_cps( self, cps ):
-    self.cps_mutex.acquire()
-    
-    self._cps = cps
-    avg_delay = 1 / float( cps )
-    self.min_delay = (1 - self.delta) * avg_delay
-    self.max_delay = (1 + self.delta) * avg_delay
-    
-    self.cps_mutex.release()
-
-  def del_cps( self ):
-    del self._cps
-
-  cps = property( get_cps, set_cps, del_cps )
-
-  # state control
-  def start( self ):
-    self.state_mutex.acquire()
-    self.state = 2
-    self.state_mutex.release()
-  
-  def stop( self ):
-    self.state_mutex.acquire()
-    self.state = 1
-    self.state_mutex.release()
-
-  def end( self ):
-    self.state_mutex.acquire()
-    self.state = 0
-    self.state_mutex.release()
-
-    self.thread.join()
+LOF_PREFIX_INFO = "(\033[92m*\033[0m) "
 
 def usage():
   print( f"usage: {sys.argv[0]} [-h] [--cps CPS] [--delta DELTA]" )
   print( "  -h     prints this page" )
   print( "  CPS    clickrate, a positive number (not only integers)" )
   print( "  DELTA  maximum delay deviation, a number between 0 and 1" )
+  sys.exit( 1 )
+
+if __name__ != "__main__": # this is meant to be a script, not a module
   sys.exit( 1 )
 
 try:
